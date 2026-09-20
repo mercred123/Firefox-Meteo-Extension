@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <title>Options Météo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .options-card {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 28px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #38bdf8;
+        }
+
+        p {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        a {
+            color: #38bdf8;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #ffffff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #38bdf8;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-save:hover {
+            background: #0369a1;
+        }
+
+        .status-msg {
+            margin-top: 14px;
+            font-size: 0.85rem;
+            text-align: center;
+            min-height: 1.2em;
+        }
+
+        .status-msg.success {
+            color: #4ade80;
+        }
+
+        .status-msg.error {
+            color: #f87171;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="options-card">
+        <h1>Configuration Météo</h1>
+        <p>
+            Entrez votre clé API personnelle OpenWeather pour alimenter l'extension. Vous pouvez en obtenir une
+            gratuitement sur <a href="https://home.openweathermap.org/api_keys" target="_blank">openweathermap.org</a>.
+        </p>
+
+        <div class="form-group">
+            <label for="api-key">Clé API OpenWeather</label>
+            <input type="text" id="api-key" placeholder="Ex: 6bf52e8a6f1b8a5f796124f4febe003e">
+        </div>
+
+        <button id="save-btn" class="btn-save">Enregistrer</button>
+
+        <div id="status" class="status-msg"></div>
+    </div>
+
+    <script src="options.js"></script>
+</body>
+
+</html>

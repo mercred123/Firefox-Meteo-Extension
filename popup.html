@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="popup.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="card">
+        <!-- Champ de recherche -->
+        <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="city" placeholder="Rechercher une ville...">
+
+        </div>
+
+        <!-- Message d'état (chargement / erreurs) -->
+        <div id="status-msg" class="status-msg">Entrez une ville</div>
+
+        <!-- Conteneur météo (masqué par défaut) -->
+        <div id="weather-content" style="display: none;">
+            <!-- Ville et Température principale -->
+            <div id="city-name" class="city-name">--</div>
+            <div id="temp-main" class="temp-main">--°</div>
+
+            <!-- Icône et plage de température -->
+            <div class="weather-info-row">
+                <img id="weather-icon" class="weather-icon-large" src="" alt="Icône météo" />
+                <div id="temp-range" class="temp-range">Min: --° | Max: --°</div>
+            </div>
+
+            <!-- Prévisions sur 3 jours -->
+            <div id="forecast" class="forecast-container"></div>
+
+            <!-- Grille de détails météo -->
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Ressenti</span>
+                    <span id="feels-like" class="detail-val">--°C</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Humidité</span>
+                    <span id="humidity" class="detail-val">--%</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Vent</span>
+                    <span id="wind-speed" class="detail-val">-- km/h</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Pression</span>
+                    <span id="pressure" class="detail-val">-- hPa</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Précip. (3h)</span>
+                    <span id="precip-3h" class="detail-val">-- mm</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Visibilité</span>
+                    <span id="visibility" class="detail-val">-- km</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Lever du soleil</span>
+                    <span id="sunrise" class="detail-val">--:--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Coucher du soleil</span>
+                    <span id="sunset" class="detail-val">--:--</span>
+                </div>
+            </div>
+
+            <!-- Indication du cache / heure de maj -->
+            <div id="last-update" class="last-update">--</div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>

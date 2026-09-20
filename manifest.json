@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Météo Express",
+  "version": "1.0",
+  "description": "Consulter la météo d'une ville.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Météo"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage"
+  ],
+  
+  "host_permissions": [
+    "https://api.openweathermap.org/*"
+  ],
+  "icons": {
+    "96": "icon/icon_meteo.png"
+  }
+}
