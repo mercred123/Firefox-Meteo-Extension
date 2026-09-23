@@ -1,25 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Météo Express",
+  "name": "__MSG_ext_name__",
   "version": "0.8",
-  "description": "Consulter la météo d'une ville.",
+  "default_locale": "fr",
+  "description": "__MSG_ext_description__",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Météo — Chargement...",
+    "default_title": "__MSG_action_default_title__",
     "default_icon": "icon/icon_meteo.png"
-  },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": true
   },
   "permissions": [
     "storage"
   ],
-  
   "host_permissions": [
     "https://api.openweathermap.org/*"
   ],
   "icons": {
     "96": "icon/icon_meteo.png"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "meteo-express@mercred",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": {
+        "required": ["locationInfo"]
+      }
+    }
   }
 }

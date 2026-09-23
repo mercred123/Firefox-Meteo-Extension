@@ -1,8 +1,20 @@
+/* Inter embarquée (variable, sous-ensemble latin : couvre FR/EN, accents et œ) */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: "Inter", sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 body {
@@ -25,8 +37,13 @@ body {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   backdrop-filter: blur(8px);
   overflow-y: auto;
+
+  /* Firefox : ::-webkit-scrollbar n'y est pas supporté */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
 }
 
+/* Chromium / WebKit (conservé pour compatibilité) */
 .card::-webkit-scrollbar {
   width: 4px;
 }
@@ -36,6 +53,14 @@ body {
 .card::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
+}
+
+/* Focus clavier visible */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
 }
 
 /* Boutons d'icône */
@@ -74,6 +99,11 @@ body {
   border-radius: 12px;
   padding: 8px 12px;
   margin-bottom: 16px;
+  transition: border-color 0.2s ease;
+}
+
+.search-box:focus-within {
+  border-color: #38bdf8;
 }
 
 .search-icon {
@@ -108,6 +138,8 @@ body {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .temp-main {
@@ -136,38 +168,58 @@ body {
   font-weight: 500;
 }
 
-/* Prévisions */
+/* --- PRÉVISIONS SUR 3 JOURS (ALIGNEES ET STRUCTURÉES) --- */
 .forecast-container {
   background: rgba(15, 23, 42, 0.5);
   border-radius: 14px;
-  padding: 10px 6px;
-  display: flex;
-  justify-content: space-around;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   margin-bottom: 16px;
+}
+
+/* Évite un cadre vide si aucune prévision n'est disponible */
+.forecast-container:empty {
+  display: none;
 }
 
 .forecast-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  padding: 8px 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.2s ease;
+}
+
+.forecast-item:hover {
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .forecast-day {
-  font-size: 0.8rem;
-  color: #cbd5e1;
-  font-weight: 500;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: capitalize;
 }
 
 .forecast-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .forecast-temp {
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 /* Grille détails */
@@ -197,11 +249,59 @@ body {
   font-weight: 600;
 }
 
-.last-update {
+/* Mise à jour et rechargement */
+.last-update-container {
   margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.last-update {
   font-size: 0.7rem;
   color: #64748b;
   text-align: center;
+}
+
+.last-update.offline {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.icon-btn-inline {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-btn-inline:hover {
+  color: #38bdf8;
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation-duration: 2.4s;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Vue Paramètres */
@@ -258,7 +358,6 @@ body {
   border-color: #38bdf8;
 }
 
-/* Boutons segmented toggle pour °C / °F */
 .unit-toggle-group {
   display: flex;
   background: rgba(15, 23, 42, 0.6);
@@ -286,7 +385,6 @@ body {
   color: #ffffff;
 }
 
-/* Liste déroulante Select */
 .form-select {
   width: 100%;
   background: rgba(15, 23, 42, 0.6);
@@ -320,6 +418,19 @@ body {
 
 .eye-btn:hover {
   color: #ffffff;
+}
+
+/* Bascule œil / œil barré (sans innerHTML) */
+.eye-btn .icon-eye-off {
+  display: none;
+}
+
+.eye-btn.revealed .icon-eye {
+  display: none;
+}
+
+.eye-btn.revealed .icon-eye-off {
+  display: block;
 }
 
 .form-help {
@@ -368,7 +479,6 @@ body {
   color: #f87171;
 }
 
-/* Signature Développeur */
 .dev-footer {
   margin-top: 10px;
   text-align: center;
@@ -456,51 +566,4 @@ body {
 
 .quota-progress.danger {
   background: #ef4444;
-}
-
-/* AJOUTER / REMPLACER À LA FIN DE popup.css */
-.last-update-container {
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.last-update {
-  margin-top: 0; /* Ajustement du margin-top d'origine */
-  font-size: 0.7rem;
-  color: #64748b;
-  text-align: center;
-}
-
-.icon-btn-inline {
-  background: transparent;
-  border: none;
-  color: #64748b; /* Même couleur que le texte */
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px;
-  border-radius: 4px;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-.icon-btn-inline:hover {
-  color: #38bdf8;
-}
-
-.spinning {
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.last-update.offline {
-  color: #f59e0b; /* Orange ambré */
-  font-weight: 500;
 }
