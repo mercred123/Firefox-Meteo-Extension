@@ -1,10 +1,37 @@
-const CACHE_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+let cacheDurationMs = 10 * 60 * 1000;
+let currentUnit = "C";
+let currentWeatherData = null;
 
+const storage =
+  typeof browser !== "undefined" ? browser.storage.local : chrome.storage.local;
+const DAILY_LIMIT = 1000;
+
+// Éléments de vues
+const mainView = document.getElementById("main-view");
+const settingsView = document.getElementById("settings-view");
+const apiModal = document.getElementById("api-modal");
+
+// Boutons
+const btnSettings = document.getElementById("btn-settings");
+const btnBack = document.getElementById("btn-back");
+const btnSaveSettings = document.getElementById("btn-save-settings");
+const btnSaveModal = document.getElementById("btn-save-modal");
+const unitCBtn = document.getElementById("unit-c");
+const unitFBtn = document.getElementById("unit-f");
+const btnReload = document.getElementById("btn-reload-weather");
+
+// Inputs & Selects
+const apiKeyInput = document.getElementById("api-key-input");
+const modalApiKeyInput = document.getElementById("modal-api-key-input");
+const cacheDurationSelect = document.getElementById("cache-duration-select");
+const settingsStatus = document.getElementById("settings-status");
+const modalStatus = document.getElementById("modal-status");
+
+// Météo UI
 const cityInput = document.getElementById("city");
 const statusMsg = document.getElementById("status-msg");
 const weatherContent = document.getElementById("weather-content");
 
-// Éléments UI
 const cityNameEl = document.getElementById("city-name");
 const tempMainEl = document.getElementById("temp-main");
 const weatherIconEl = document.getElementById("weather-icon");
@@ -21,10 +48,170 @@ const sunriseEl = document.getElementById("sunrise");
 const sunsetEl = document.getElementById("sunset");
 const lastUpdateEl = document.getElementById("last-update");
 
+const estimationValEl = document.getElementById("estimation-val");
+const quotaProgressEl = document.getElementById("quota-progress");
+const quotaTextEl = document.getElementById("quota-text");
+
+const actionAPI = (typeof browser !== "undefined" && browser.action) 
+  ? browser.action 
+  : (typeof chrome !== "undefined" && chrome.action ? chrome.action : null);
+
+// Masquer/Afficher clé API avec l'œil
+function setupEyeToggle(inputId, toggleBtnId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(toggleBtnId);
+
+  btn?.addEventListener("click", () => {
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+
+    btn.innerHTML = isPassword
+      ? `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+         </svg>`
+      : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+         </svg>`;
+  });
+}
+
+setupEyeToggle("api-key-input", "toggle-key-settings");
+setupEyeToggle("modal-api-key-input", "toggle-key-modal");
+
+function updateBadge(tempCelsius) {
+  if (!actionAPI) return;
+
+  const tempFormatted = `${convertTemp(tempCelsius)}°`;
+
+  actionAPI.setBadgeText({ text: tempFormatted });
+  actionAPI.setBadgeBackgroundColor({ color: "#0284c7" }); // Bleu assorti au thème
+}
+
+btnReload?.addEventListener("click", async () => {
+  const currentCity = cityInput.value.trim() || currentWeatherData?.current?.name;
+  if (!currentCity) return;
+
+  btnReload.classList.add("spinning");
+  await getWeather(currentCity, true); // true = force l'appel API
+  btnReload.classList.remove("spinning");
+});
+
+// Conversions de température
+function convertTemp(tempCelsius) {
+  if (currentUnit === "F") {
+    return Math.round((tempCelsius * 9) / 5 + 32);
+  }
+  return Math.round(tempCelsius);
+}
+
+// Gestion des boutons °C / °F dans le DOM
+function setUnitUI(unit) {
+  currentUnit = unit;
+  if (unit === "C") {
+    unitCBtn.classList.add("active");
+    unitFBtn.classList.remove("active");
+  } else {
+    unitFBtn.classList.add("active");
+    unitCBtn.classList.remove("active");
+  }
+}
+
+unitCBtn.addEventListener("click", () => setUnitUI("C"));
+unitFBtn.addEventListener("click", () => setUnitUI("F"));
+
 async function getApiKey() {
-  const store = await browser.storage.local.get("apiKey");
+  const store = await storage.get("apiKey");
   return store.apiKey || null;
 }
+
+// Charger les préférences
+async function loadSettings() {
+  const store = await storage.get(["unit", "cacheDuration", "apiKey"]);
+  currentUnit = store.unit || "C";
+  setUnitUI(currentUnit);
+
+  const duration = store.cacheDuration || 10;
+  cacheDurationSelect.value = duration;
+  cacheDurationMs = duration * 60 * 1000;
+
+  if (store.apiKey) {
+    apiKeyInput.value = store.apiKey;
+  }
+}
+
+// Ouvrir les paramètres
+async function openSettings() {
+  await loadSettings();
+  updateEstimation();
+  await updateQuotaUI();
+  settingsStatus.innerText = "";
+  settingsStatus.className = "settings-status";
+
+  mainView.style.display = "none";
+  settingsView.style.display = "block";
+}
+
+cacheDurationSelect.addEventListener("change", updateEstimation);
+
+// Fermer les paramètres et réafficher la météo (sans rappel d'API si seul l'unité change)
+async function closeSettings() {
+  settingsView.style.display = "none";
+  mainView.style.display = "block";
+
+  if (currentWeatherData) {
+    updateWeatherUI(
+      currentWeatherData.current,
+      currentWeatherData.forecast,
+      currentWeatherData.timestamp,
+      currentWeatherData.isFromCache,
+    );
+  } else {
+    loadDefaultCity();
+  }
+}
+
+btnSettings.addEventListener("click", openSettings);
+btnBack.addEventListener("click", closeSettings);
+
+// Sauvegarder les paramètres
+btnSaveSettings.addEventListener("click", async () => {
+  const key = apiKeyInput.value.trim();
+  if (!key) {
+    settingsStatus.innerText = "Veuillez saisir une clé valide.";
+    settingsStatus.className = "settings-status error";
+    return;
+  }
+
+  const durationMin = parseInt(cacheDurationSelect.value, 10);
+  cacheDurationMs = durationMin * 60 * 1000;
+
+  await storage.set({
+    apiKey: key,
+    unit: currentUnit,
+    cacheDuration: durationMin,
+  });
+
+  settingsStatus.innerText = "Enregistré !";
+  settingsStatus.className = "settings-status success";
+
+  setTimeout(() => closeSettings(), 600);
+});
+
+// Sauvegarde via la modale
+btnSaveModal.addEventListener("click", async () => {
+  const key = modalApiKeyInput.value.trim();
+  if (!key) {
+    modalStatus.innerText = "Saisissez une clé valide.";
+    modalStatus.className = "settings-status error";
+    return;
+  }
+
+  await storage.set({ apiKey: key });
+  apiModal.style.display = "none";
+  loadDefaultCity();
+});
 
 cityInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
@@ -33,19 +220,11 @@ cityInput.addEventListener("keypress", (e) => {
   }
 });
 
-async function getWeather(city) {
+async function getWeather(city, forceRefresh = false) {
   const apiKey = await getApiKey();
 
   if (!apiKey) {
-    statusMsg.style.display = "block";
-    statusMsg.innerHTML =
-      'Clé API manquante.<br><a href="#" id="open-options" style="color:#38bdf8; text-decoration: underline;">Configurer les options</a>';
-    weatherContent.style.display = "none";
-
-    document.getElementById("open-options")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      browser.runtime.openOptionsPage();
-    });
+    apiModal.style.display = "flex";
     return;
   }
 
@@ -57,19 +236,13 @@ async function getWeather(city) {
   const encodedCity = encodeURIComponent(city);
   const now = Date.now();
 
-  const storage = await browser.storage.local.get(["weatherCache", "lastCity"]);
-  const cache = storage.weatherCache || {};
+  const store = await storage.get(["weatherCache", "lastCity"]);
+  const cache = store.weatherCache || {};
 
-  // Utilisation du cache si < 10 min
-  if (cache[cityKey] && now - cache[cityKey].timestamp < CACHE_DURATION_MS) {
+  if (!forceRefresh && cache[cityKey] && now - cache[cityKey].timestamp < cacheDurationMs) {
     const cachedData = cache[cityKey];
-    updateWeatherUI(
-      cachedData.current,
-      cachedData.forecast,
-      cachedData.timestamp,
-      true,
-    );
-    await browser.storage.local.set({ lastCity: cachedData.current.name });
+    updateWeatherUI(cachedData.current, cachedData.forecast, cachedData.timestamp, true);
+    await storage.set({ lastCity: cachedData.current.name });
     return;
   }
 
@@ -88,9 +261,10 @@ async function getWeather(city) {
       `https://api.openweathermap.org/data/2.5/forecast?q=${encodedCity}&units=metric&appid=${apiKey}&lang=fr`,
     );
     const dataForecast = await resForecast.json();
+    await incrementDailyCalls(2);
 
     if (Number(dataForecast.cod) !== 200) {
-      statusMsg.innerText = "Erreur lors de la récupération des prévisions.";
+      statusMsg.innerText = "Erreur prévisions.";
       return;
     }
 
@@ -100,7 +274,7 @@ async function getWeather(city) {
       forecast: dataForecast,
     };
 
-    await browser.storage.local.set({
+    await storage.set({
       weatherCache: cache,
       lastCity: dataCurrent.name,
     });
@@ -111,17 +285,42 @@ async function getWeather(city) {
   }
 }
 
+function updateBadgeAndTitle(current) {
+  if (!actionAPI) return;
+
+  const temp = `${convertTemp(current.main.temp)}°${currentUnit}`;
+  const desc = current.weather[0]?.description || "";
+  const descFormat = desc.charAt(0).toUpperCase() + desc.slice(1); // Ex: "Nuageux"
+
+  // 1. Badge sur l'icône (ex: "21°")
+  actionAPI.setBadgeText({ text: `${convertTemp(current.main.temp)}°` });
+  actionAPI.setBadgeBackgroundColor({ color: "#0284c7" });
+
+  // 2. Info-bulle au survol (ex: "Paris : 21°C, Ciel dégagé")
+  actionAPI.setTitle({
+    title: `${current.name} : ${temp}, ${descFormat}`
+  });
+}
+
 function updateWeatherUI(current, forecast, timestamp, isFromCache) {
+  // Enregistrement des données brutes en mémoire pour ré-affichage rapide lors du switch C/F
+  currentWeatherData = { current, forecast, timestamp, isFromCache };
+
+  updateBadge(current.main.temp);
+  updateBadgeAndTitle(current);
+
   statusMsg.style.display = "none";
   weatherContent.style.display = "block";
 
+  const unitSymbol = `°${currentUnit}`;
+
   cityNameEl.innerText = current.name;
-  tempMainEl.innerText = `${Math.round(current.main.temp)}°`;
+  tempMainEl.innerText = `${convertTemp(current.main.temp)}${unitSymbol}`;
   weatherIconEl.src = `https://openweathermap.org/img/wn/${current.weather[0].icon}@2x.png`;
   weatherIconEl.alt = current.weather[0].description;
-  tempRangeEl.innerText = `Min: ${Math.round(current.main.temp_min)}° | Max: ${Math.round(current.main.temp_max)}°`;
+  tempRangeEl.innerText = `Min: ${convertTemp(current.main.temp_min)}° | Max: ${convertTemp(current.main.temp_max)}°`;
 
-  feelsLikeEl.innerText = `${Math.round(current.main.feels_like)}°C`;
+  feelsLikeEl.innerText = `${convertTemp(current.main.feels_like)}${unitSymbol}`;
   humidityEl.innerText = `${current.main.humidity}%`;
   windSpeedEl.innerText = `${Math.round(current.wind.speed * 3.6)} km/h`;
   pressureEl.innerText = `${current.main.pressure} hPa`;
@@ -149,15 +348,15 @@ function updateWeatherUI(current, forecast, timestamp, isFromCache) {
     sunsetEl.innerText = "--:--";
   }
 
+  const durationMin = Math.round(cacheDurationMs / 60000);
   const updateTime = new Date(timestamp).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
   });
   lastUpdateEl.innerText = isFromCache
-    ? `En cache (${updateTime}) — Maj auto dans 10 min`
+    ? `En cache (${updateTime}) — Maj dans ${durationMin} min`
     : `Mise à jour (${updateTime})`;
 
-  // Affichage des 3 prochains jours
   forecastEl.innerHTML = "";
   const dailyForecasts = forecast.list
     .filter((item) => item.dt_txt.includes("12:00:00"))
@@ -171,20 +370,80 @@ function updateWeatherUI(current, forecast, timestamp, isFromCache) {
 
     const dayEl = document.createElement("div");
     dayEl.className = "forecast-item";
-
     dayEl.innerHTML = `
       <div class="forecast-day">${dayName}</div>
       <img class="forecast-icon" src="${iconUrl}" alt="icon" />
-      <div class="forecast-temp">${Math.round(item.main.temp)}°</div>
+      <div class="forecast-temp">${convertTemp(item.main.temp)}°</div>
     `;
     forecastEl.appendChild(dayEl);
   });
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const data = await browser.storage.local.get("lastCity");
+async function loadDefaultCity() {
+  const data = await storage.get("lastCity");
   if (data.lastCity) {
     cityInput.value = data.lastCity;
     getWeather(data.lastCity);
   }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadSettings();
+  const apiKey = await getApiKey();
+
+  if (!apiKey) {
+    apiModal.style.display = "flex";
+  } else {
+    loadDefaultCity();
+  }
 });
+
+function updateEstimation() {
+  const durationMin = parseInt(cacheDurationSelect.value, 10);
+  const refreshesPerDay = 1440 / durationMin; // 1440 min dans 24h
+  const reqPerRefresh = 2; // 1 call weather + 1 call forecast
+  const totalCalls = Math.round(refreshesPerDay * reqPerRefresh * 2); // pour 2 villes
+
+  estimationValEl.innerText = `${totalCalls.toLocaleString("fr-FR")} req`;
+}
+
+// Met à jour la barre de quota et le texte dans les paramètres
+async function updateQuotaUI() {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const store = await storage.get(["dailyCallsDate", "dailyCallsCount"]);
+
+  let count = store.dailyCallsCount || 0;
+  if (store.dailyCallsDate !== todayStr) {
+    count = 0; // Réinitialisation quotidienne
+    await storage.set({ dailyCallsDate: todayStr, dailyCallsCount: 0 });
+  }
+
+  const remaining = Math.max(0, DAILY_LIMIT - count);
+  const percentage = Math.min(100, Math.round((count / DAILY_LIMIT) * 100));
+
+  quotaProgressEl.style.width = `${percentage}%`;
+  quotaTextEl.innerText = `${count} / ${DAILY_LIMIT.toLocaleString("fr-FR")} utilisées (${remaining} restantes)`;
+
+  // Changement de couleur si proche de la limite
+  quotaProgressEl.className = "quota-progress";
+  if (percentage >= 90) {
+    quotaProgressEl.classList.add("danger");
+  } else if (percentage >= 70) {
+    quotaProgressEl.classList.add("warning");
+  }
+}
+
+// Incrémente le compteur quand un vrai appel API est effectué
+async function incrementDailyCalls(callsCount = 2) {
+  const todayStr = new Date().toISOString().split("T")[0];
+  const store = await storage.get(["dailyCallsDate", "dailyCallsCount"]);
+
+  let currentCount = store.dailyCallsCount || 0;
+  if (store.dailyCallsDate !== todayStr) {
+    currentCount = 0;
+  }
+
+  const newCount = currentCount + callsCount;
+  await storage.set({ dailyCallsDate: todayStr, dailyCallsCount: newCount });
+  updateQuotaUI();
+}

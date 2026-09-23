@@ -9,73 +9,190 @@
 
 <body>
     <div class="card">
-        <!-- Champ de recherche -->
-        <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" id="city" placeholder="Rechercher une ville...">
+        <!-- VUE PRINCIPALE (MÉTÉO) -->
+        <div id="main-view">
+            <!-- Champ de recherche -->
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="city" placeholder="Rechercher une ville...">
 
+                <!-- Bouton Paramètres -->
+                <button id="btn-settings" class="icon-btn" title="Paramètres">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Message d'état -->
+            <div id="status-msg" class="status-msg">Entrez une ville</div>
+
+            <!-- Conteneur météo -->
+            <div id="weather-content" style="display: none;">
+                <div id="city-name" class="city-name">--</div>
+                <div id="temp-main" class="temp-main">--°</div>
+
+                <div class="weather-info-row">
+                    <img id="weather-icon" class="weather-icon-large" src="" alt="Icône météo" />
+                    <div id="temp-range" class="temp-range">Min: --° | Max: --°</div>
+                </div>
+
+                <div id="forecast" class="forecast-container"></div>
+
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Ressenti</span>
+                        <span id="feels-like" class="detail-val">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Humidité</span>
+                        <span id="humidity" class="detail-val">--%</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Vent</span>
+                        <span id="wind-speed" class="detail-val">-- km/h</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Pression</span>
+                        <span id="pressure" class="detail-val">-- hPa</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Précip. (3h)</span>
+                        <span id="precip-3h" class="detail-val">-- mm</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Visibilité</span>
+                        <span id="visibility" class="detail-val">-- km</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Lever du soleil</span>
+                        <span id="sunrise" class="detail-val">--:--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Coucher du soleil</span>
+                        <span id="sunset" class="detail-val">--:--</span>
+                    </div>
+                </div>
+
+                <div class="last-update-container">
+                    <span id="last-update" class="last-update">--</span>
+                    <button id="btn-reload-weather" class="icon-btn-inline" title="Forcer la mise à jour">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Message d'état (chargement / erreurs) -->
-        <div id="status-msg" class="status-msg">Entrez une ville</div>
-
-        <!-- Conteneur météo (masqué par défaut) -->
-        <div id="weather-content" style="display: none;">
-            <!-- Ville et Température principale -->
-            <div id="city-name" class="city-name">--</div>
-            <div id="temp-main" class="temp-main">--°</div>
-
-            <!-- Icône et plage de température -->
-            <div class="weather-info-row">
-                <img id="weather-icon" class="weather-icon-large" src="" alt="Icône météo" />
-                <div id="temp-range" class="temp-range">Min: --° | Max: --°</div>
+        <!-- VUE PARAMÈTRES -->
+        <div id="settings-view" style="display: none;">
+            <div class="settings-header">
+                <button id="btn-back" class="icon-btn" title="Retour">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <h2>Paramètres</h2>
             </div>
 
-            <!-- Prévisions sur 3 jours -->
-            <div id="forecast" class="forecast-container"></div>
+            <div class="settings-content">
+                <!-- Clé API -->
+                <div class="form-group">
+                    <label for="api-key-input" class="form-label">Clé API OpenWeather</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="api-key-input" class="form-input"
+                            placeholder="Collez votre clé API ici...">
+                        <button id="toggle-key-settings" class="eye-btn" type="button" title="Afficher/Masquer">
+                            <svg class="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                    <small class="form-help">Clé disponible sur <a href="https://openweathermap.org/api" target="_blank"
+                            class="link">openweathermap.org</a></small>
+                </div>
 
-            <!-- Grille de détails météo -->
-            <div class="details-grid">
-                <div class="detail-item">
-                    <span class="detail-label">Ressenti</span>
-                    <span id="feels-like" class="detail-val">--°C</span>
+                <!-- Unité de Température -->
+                <div class="form-group">
+                    <label class="form-label">Unité de température</label>
+                    <div class="unit-toggle-group">
+                        <button type="button" id="unit-c" class="unit-btn active">°C (Celsius)</button>
+                        <button type="button" id="unit-f" class="unit-btn">°F (Fahrenheit)</button>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Humidité</span>
-                    <span id="humidity" class="detail-val">--%</span>
+
+                <!-- Fréquence de Rafraîchissement -->
+                <div class="form-group">
+                    <label for="cache-duration-select" class="form-label">Fréquence des requêtes API</label>
+                    <select id="cache-duration-select" class="form-select">
+                        <option value="5">Toutes les 5 minutes</option>
+                        <option value="10" selected>Toutes les 10 minutes</option>
+                        <option value="15">Toutes les 15 minutes</option>
+                        <option value="30">Toutes les 30 minutes</option>
+                        <option value="60">Toutes les 60 minutes</option>
+                    </select>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Vent</span>
-                    <span id="wind-speed" class="detail-val">-- km/h</span>
+
+                <div id="api-estimation" class="estimation-box">
+                    📊 Estim. pour 2 villes : <strong id="estimation-val">--</strong> requêtes/jour
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Pression</span>
-                    <span id="pressure" class="detail-val">-- hPa</span>
+
+                <div class="form-group" style="margin-top: 10px;">
+                    <label class="form-label">Quota API du jour (OpenWeather)</label>
+                    <div class="quota-bar-container">
+                        <div id="quota-progress" class="quota-progress"></div>
+                    </div>
+                    <small id="quota-text" class="form-help">-- / 1 000 requêtes utilisées aujourd'hui</small>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Précip. (3h)</span>
-                    <span id="precip-3h" class="detail-val">-- mm</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Visibilité</span>
-                    <span id="visibility" class="detail-val">-- km</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Lever du soleil</span>
-                    <span id="sunrise" class="detail-val">--:--</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Coucher du soleil</span>
-                    <span id="sunset" class="detail-val">--:--</span>
-                </div>
+
+                <button id="btn-save-settings" class="primary-btn">Enregistrer</button>
+                <div id="settings-status" class="settings-status"></div>
+
+                <!-- Nom de Développeur -->
+                <div class="dev-footer">Dev : MERCRED</div>
             </div>
+        </div>
 
-            <!-- Indication du cache / heure de maj -->
-            <div id="last-update" class="last-update">--</div>
+        <!-- POPUP INTERNE (SAISIE OBLIGATOIRE CLÉ API) -->
+        <div id="api-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-card">
+                <div class="modal-icon">🔑</div>
+                <h3>Clé API requise</h3>
+                <p class="modal-text">Entrez votre clé API OpenWeather pour afficher la météo.</p>
+
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="password" id="modal-api-key-input" class="form-input"
+                            placeholder="Clé API OpenWeather...">
+                        <button id="toggle-key-modal" class="eye-btn" type="button" title="Afficher/Masquer">
+                            <svg class="eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="btn-save-modal" class="primary-btn">Valider</button>
+                <div id="modal-status" class="settings-status"></div>
+            </div>
         </div>
     </div>
 

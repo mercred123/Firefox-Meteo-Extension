@@ -14,8 +14,9 @@ body {
   overflow: hidden;
 }
 
-/* Carte principale avec barre de défilement */
+/* Carte principale */
 .card {
+  position: relative;
   height: 100%;
   background: rgba(30, 41, 59, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -26,22 +27,42 @@ body {
   overflow-y: auto;
 }
 
-/* Personnalisation de la barre de défilement (Scrollbar) */
 .card::-webkit-scrollbar {
   width: 4px;
 }
-
 .card::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .card::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
 }
 
-.card::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4);
+/* Boutons d'icône */
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
 }
 
 /* Champ de recherche */
@@ -74,7 +95,6 @@ body {
   color: #94a3b8;
 }
 
-/* Message de statut */
 .status-msg {
   text-align: center;
   color: #94a3b8;
@@ -82,7 +102,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* Affichage principal météo */
+/* Affichage météo */
 .city-name {
   font-size: 1.5rem;
   font-weight: 800;
@@ -116,7 +136,7 @@ body {
   font-weight: 500;
 }
 
-/* Prévisions 3 jours */
+/* Prévisions */
 .forecast-container {
   background: rgba(15, 23, 42, 0.5);
   border-radius: 14px;
@@ -150,7 +170,7 @@ body {
   font-weight: 600;
 }
 
-/* Grille de détails supplémentaires */
+/* Grille détails */
 .details-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -177,10 +197,305 @@ body {
   font-weight: 600;
 }
 
-/* Affichage du timestamp du cache */
 .last-update {
   margin-top: 14px;
   font-size: 0.7rem;
   color: #64748b;
   text-align: center;
+}
+
+/* Vue Paramètres */
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.settings-header h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 8px 36px 8px 10px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: #38bdf8;
+}
+
+/* Boutons segmented toggle pour °C / °F */
+.unit-toggle-group {
+  display: flex;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.unit-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.unit-btn.active {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Liste déroulante Select */
+.form-select {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #ffffff;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.form-select option {
+  background: #1a2332;
+  color: #ffffff;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.eye-btn:hover {
+  color: #ffffff;
+}
+
+.form-help {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.link {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+.primary-btn {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.primary-btn:hover {
+  background: #0369a1;
+}
+
+.primary-btn:active {
+  transform: scale(0.98);
+}
+
+.settings-status {
+  font-size: 0.8rem;
+  text-align: center;
+  min-height: 16px;
+}
+
+.settings-status.success {
+  color: #4ade80;
+}
+
+.settings-status.error {
+  color: #f87171;
+}
+
+/* Signature Développeur */
+.dev-footer {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+}
+
+/* Modale Interne */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.modal-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.modal-icon {
+  font-size: 2rem;
+}
+
+.modal-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.modal-text {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  line-height: 1.3;
+}
+
+.estimation-box {
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(56, 189, 248, 0.3);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin-top: -6px;
+}
+
+.estimation-box strong {
+  color: #38bdf8;
+}
+
+.quota-bar-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.quota-progress {
+  height: 100%;
+  width: 0%;
+  background: #0284c7;
+  border-radius: 4px;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.quota-progress.warning {
+  background: #f59e0b;
+}
+
+.quota-progress.danger {
+  background: #ef4444;
+}
+
+/* AJOUTER / REMPLACER À LA FIN DE popup.css */
+.last-update-container {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.last-update {
+  margin-top: 0; /* Ajustement du margin-top d'origine */
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.icon-btn-inline {
+  background: transparent;
+  border: none;
+  color: #64748b; /* Même couleur que le texte */
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.icon-btn-inline:hover {
+  color: #38bdf8;
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

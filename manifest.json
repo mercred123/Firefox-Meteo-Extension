@@ -5,7 +5,8 @@
   "description": "Consulter la météo d'une ville.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Météo"
+    "default_title": "Météo — Chargement...",
+    "default_icon": "icon/icon_meteo.png"
   },
   "options_ui": {
     "page": "options.html",
