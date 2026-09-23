@@ -499,3 +499,8 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.last-update.offline {
+  color: #f59e0b; /* Orange ambré */
+  font-weight: 500;
+}

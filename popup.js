@@ -52,9 +52,12 @@ const estimationValEl = document.getElementById("estimation-val");
 const quotaProgressEl = document.getElementById("quota-progress");
 const quotaTextEl = document.getElementById("quota-text");
 
-const actionAPI = (typeof browser !== "undefined" && browser.action) 
-  ? browser.action 
-  : (typeof chrome !== "undefined" && chrome.action ? chrome.action : null);
+const actionAPI =
+  typeof browser !== "undefined" && browser.action
+    ? browser.action
+    : typeof chrome !== "undefined" && chrome.action
+      ? chrome.action
+      : null;
 
 // Masquer/Afficher clé API avec l'œil
 function setupEyeToggle(inputId, toggleBtnId) {
@@ -90,7 +93,8 @@ function updateBadge(tempCelsius) {
 }
 
 btnReload?.addEventListener("click", async () => {
-  const currentCity = cityInput.value.trim() || currentWeatherData?.current?.name;
+  const currentCity =
+    cityInput.value.trim() || currentWeatherData?.current?.name;
   if (!currentCity) return;
 
   btnReload.classList.add("spinning");
@@ -238,14 +242,47 @@ async function getWeather(city, forceRefresh = false) {
 
   const store = await storage.get(["weatherCache", "lastCity"]);
   const cache = store.weatherCache || {};
+  const cachedData = cache[cityKey];
 
-  if (!forceRefresh && cache[cityKey] && now - cache[cityKey].timestamp < cacheDurationMs) {
-    const cachedData = cache[cityKey];
-    updateWeatherUI(cachedData.current, cachedData.forecast, cachedData.timestamp, true);
+  // 1. Détection du mode Hors Ligne
+  const isOffline = !navigator.onLine;
+
+  if (isOffline) {
+    if (cachedData) {
+      // Chargement des données locales sans appel API
+      updateWeatherUI(
+        cachedData.current,
+        cachedData.forecast,
+        cachedData.timestamp,
+        true,
+        true,
+      );
+      await storage.set({ lastCity: cachedData.current.name });
+    } else {
+      statusMsg.innerText =
+        "Hors ligne : aucune donnée sauvegardée pour cette ville.";
+    }
+    return;
+  }
+
+  // 2. Si en ligne, vérification du cache valide (si forceRefresh est faux)
+  if (
+    !forceRefresh &&
+    cachedData &&
+    now - cachedData.timestamp < cacheDurationMs
+  ) {
+    updateWeatherUI(
+      cachedData.current,
+      cachedData.forecast,
+      cachedData.timestamp,
+      true,
+      false,
+    );
     await storage.set({ lastCity: cachedData.current.name });
     return;
   }
 
+  // 3. Appel API
   try {
     const resCurrent = await fetch(
       `https://api.openweathermap.org/data/2.5/weather?q=${encodedCity}&units=metric&appid=${apiKey}&lang=fr`,
@@ -261,7 +298,6 @@ async function getWeather(city, forceRefresh = false) {
       `https://api.openweathermap.org/data/2.5/forecast?q=${encodedCity}&units=metric&appid=${apiKey}&lang=fr`,
     );
     const dataForecast = await resForecast.json();
-    await incrementDailyCalls(2);
 
     if (Number(dataForecast.cod) !== 200) {
       statusMsg.innerText = "Erreur prévisions.";
@@ -279,9 +315,21 @@ async function getWeather(city, forceRefresh = false) {
       lastCity: dataCurrent.name,
     });
 
-    updateWeatherUI(dataCurrent, dataForecast, now, false);
+    await incrementDailyCalls(2);
+    updateWeatherUI(dataCurrent, dataForecast, now, false, false);
   } catch (err) {
-    statusMsg.innerText = "Erreur de connexion.";
+    // Fallback si la requête échoue en cours de route (ex: perte soudaine de connexion)
+    if (cachedData) {
+      updateWeatherUI(
+        cachedData.current,
+        cachedData.forecast,
+        cachedData.timestamp,
+        true,
+        true,
+      );
+    } else {
+      statusMsg.innerText = "Erreur de connexion (Hors ligne).";
+    }
   }
 }
 
@@ -298,15 +346,19 @@ function updateBadgeAndTitle(current) {
 
   // 2. Info-bulle au survol (ex: "Paris : 21°C, Ciel dégagé")
   actionAPI.setTitle({
-    title: `${current.name} : ${temp}, ${descFormat}`
+    title: `${current.name} : ${temp}, ${descFormat}`,
   });
 }
 
-function updateWeatherUI(current, forecast, timestamp, isFromCache) {
-  // Enregistrement des données brutes en mémoire pour ré-affichage rapide lors du switch C/F
-  currentWeatherData = { current, forecast, timestamp, isFromCache };
+function updateWeatherUI(
+  current,
+  forecast,
+  timestamp,
+  isFromCache,
+  isOffline = false,
+) {
+  currentWeatherData = { current, forecast, timestamp, isFromCache, isOffline };
 
-  updateBadge(current.main.temp);
   updateBadgeAndTitle(current);
 
   statusMsg.style.display = "none";
@@ -353,9 +405,16 @@ function updateWeatherUI(current, forecast, timestamp, isFromCache) {
     hour: "2-digit",
     minute: "2-digit",
   });
-  lastUpdateEl.innerText = isFromCache
-    ? `En cache (${updateTime}) — Maj dans ${durationMin} min`
-    : `Mise à jour (${updateTime})`;
+
+  if (isOffline) {
+    lastUpdateEl.innerText = `Hors ligne — Données en cache (${updateTime}) • Aucun appel API`;
+    lastUpdateEl.classList.add("offline");
+  } else {
+    lastUpdateEl.classList.remove("offline");
+    lastUpdateEl.innerText = isFromCache
+      ? `En cache (${updateTime}) — Maj dans ${durationMin} min`
+      : `Mise à jour (${updateTime})`;
+  }
 
   forecastEl.innerHTML = "";
   const dailyForecasts = forecast.list
